@@ -101,7 +101,7 @@
       (dissoc :date_joined :last_login :is_superuser :is_qbnewb)))
 
 ;; create a channel then select its details
-(defn- create-channel-then-select
+(defn- create-channel-then-select!
   [channel]
   (when-let [new-channel-id (create-pulse-channel channel)]
     (-> (db/sel :one PulseChannel :id new-channel-id)
@@ -110,7 +110,7 @@
         (dissoc :id :pulse_id :created_at :updated_at)
         (m/dissoc-in [:details :emails]))))
 
-(defn- update-channel-then-select
+(defn- update-channel-then-select!
   [{:keys [id] :as channel}]
   (update-pulse-channel channel)
   (-> (db/sel :one PulseChannel :id id)
@@ -130,7 +130,7 @@
                    (user-details :rasta)]}
   (tu/with-temp Pulse [{:keys [id]} {:creator_id (user->id :rasta)
                                      :name       (tu/random-name)}]
-    (create-channel-then-select {:pulse_id      id
+    (create-channel-then-select! {:pulse_id      id
                                  :channel_type  :email
                                  :schedule_type schedule-type-daily
                                  :schedule_hour 18
@@ -146,7 +146,7 @@
    :details       {:something "random"}}
   (tu/with-temp Pulse [{:keys [id]} {:creator_id (user->id :rasta)
                                      :name       (tu/random-name)}]
-    (create-channel-then-select {:pulse_id      id
+    (create-channel-then-select! {:pulse_id      id
                                  :channel_type  :slack
                                  :schedule_type schedule-type-hourly
                                  :details       {:something "random"}
@@ -169,7 +169,7 @@
                                                               :details       {}
                                                               :schedule_type schedule-type-daily
                                                               :schedule_hour 15}]
-      (update-channel-then-select {:id            channel-id
+      (update-channel-then-select! {:id            channel-id
                                    :channel_type  :email
                                    :schedule_type schedule-type-daily
                                    :schedule_hour 18
@@ -190,7 +190,7 @@
                                                               :details       {}
                                                               :schedule_type schedule-type-daily
                                                               :schedule_hour 15}]
-      (update-channel-then-select {:id            channel-id
+      (update-channel-then-select! {:id            channel-id
                                    :channel_type  :email
                                    :schedule_type schedule-type-monthly
                                    :schedule_hour 8
@@ -213,7 +213,7 @@
                                                               :details       {}
                                                               :schedule_type schedule-type-daily
                                                               :schedule_hour 15}]
-      (update-channel-then-select {:id            channel-id
+      (update-channel-then-select! {:id            channel-id
                                    :channel_type  :email
                                    :schedule_type schedule-type-weekly
                                    :schedule_hour 8
@@ -236,7 +236,7 @@
                                                               :schedule_type schedule-type-daily
                                                               :schedule_hour 15}]
       (update-recipients! channel-id [(user->id :rasta)])
-      (update-channel-then-select {:id            channel-id
+      (update-channel-then-select! {:id            channel-id
                                    :channel_type  :email
                                    :schedule_type schedule-type-hourly
                                    :schedule_hour 12
@@ -259,7 +259,7 @@
                                                               :details       {}
                                                               :schedule_type schedule-type-daily
                                                               :schedule_hour 15}]
-      (update-channel-then-select {:id            channel-id
+      (update-channel-then-select! {:id            channel-id
                                    :channel_type  :email
                                    :schedule_type schedule-type-daily
                                    :schedule_hour 12

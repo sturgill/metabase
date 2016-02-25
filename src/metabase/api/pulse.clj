@@ -10,11 +10,11 @@
             [metabase.integrations.slack :as slack]
             (metabase.models [card :refer [Card]]
                              [database :refer [Database]]
-                             [pulse :refer [Pulse] :as pulse]
+                             [pulse :refer [Pulse retrieve-pulse] :as pulse]
                              [pulse-channel :refer [channel-types]])
             [metabase.pulse :as p]
-            [metabase.task.send-pulses :refer [send-pulse]]
-            [metabase.models.pulse :refer [retrieve-pulse]]))
+            [metabase.task.send-pulses :refer [send-pulse!]]
+            [metabase.util :as u]))
 
 
 (defendpoint GET "/"
@@ -31,7 +31,11 @@
    channels [Required ArrayOfMaps]}
   ;; prevent more than 5 cards
   ;; limit channel types to :email and :slack
-  (->500 (pulse/create-pulse name *current-user-id* (filter identity (map :id cards)) channels)))
+  (->500 (pulse/create-pulse name *current-user-id*
+                             (for [{:keys [id]}  cards
+                                   :when         id]
+                               id)
+                             channels)))
 
 
 (defendpoint GET "/:id"
@@ -59,10 +63,9 @@
 (defendpoint DELETE "/:id"
   "Delete a `Pulse`."
   [id]
-  (let [pulse  (db/sel :one Pulse :id id)
-        result (db/cascade-delete Pulse :id id)]
-    (events/publish-event :pulse-delete (assoc pulse :actor_id *current-user-id*))
-    result))
+  (let [pulse (Pulse id)]
+    (u/prog1 (db/cascade-delete Pulse :id id)
+      (events/publish-event :pulse-delete (assoc pulse :actor_id *current-user-id*)))))
 
 
 (defendpoint GET "/form_input"
@@ -75,8 +78,10 @@
                  ;; no Slack integration, so we are g2g
                  chan-types
                  ;; if we have Slack enabled build a dynamic list of channels/users
-                 (let [slack-channels (mapv (fn [ch] (str "#" (get ch "name"))) (get (slack/channels-list) "channels"))
-                       slack-users    (mapv (fn [u] (str "@" (get u "name"))) (get (slack/users-list) "members"))]
+                 (let [slack-channels (for [channel (slack/channels-list)]
+                                        (str \# (:name channel)))
+                       slack-users    (for [user (slack/users-list)]
+                                        (str \@ (:name user)))]
                    (assoc-in chan-types [:slack :fields 0 :options] (concat slack-channels slack-users))))}))
 
 
@@ -117,7 +122,7 @@
   {name     [Required NonEmptyString]
    cards    [Required ArrayOfMaps]
    channels [Required ArrayOfMaps]}
-  (send-pulse body)
+  (send-pulse! body)
   {:ok true})
 
 (define-routes)

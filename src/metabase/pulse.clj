@@ -209,15 +209,6 @@
   [img-bytes]
   (str "data:image/png;base64," (String. (Base64Coder/encode img-bytes))))
 
-;; This isn't being used, not sure what the point of it was. Commented out until mystery is solved.
-#_(defn render-button
-  [text href icon render-img]
-  [:a {:style button-style :href href}
-    [:span (h text)]
-    (if icon [:img {:style (style {:margin-left :4px, :width :16px})
-                    :width 16
-                    :src (-> (str "frontend_client/app/img/" icon "@2x.png") io/resource io/input-stream IOUtils/toByteArray render-img)}])])
-
 (defn- render-table
   [card rows cols render-img include-buttons col-indexes bar-column]
   (let [max-value (if bar-column (apply max (map bar-column rows)))]
@@ -439,5 +430,6 @@
    (render-pulse-card card (:data result) render-img true include-buttons)])
 
 (defn render-pulse-card-to-png
-  [card data include-title]
-  (render-html-to-png (render-pulse-card card data render-img-data-uri include-title false) card-width))
+  "Render a PULSE-CARD as a PNG. WTF is DATA?"
+  [pulse-card data & [include-title?]]
+  (render-html-to-png (render-pulse-card pulse-card data render-img-data-uri include-title? false) card-width))
